@@ -1,1 +1,1 @@
-# HHk Scherpenzeel kerkblad
+# HHk Scherpenzeel kerkbode

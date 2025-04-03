@@ -1,49 +1,40 @@
-let wijk1Data = [];
-let wijk2Data = [];
+// Zorg ervoor dat adressen.js eerst wordt geladen in index.html voordat script.js wordt uitgevoerd
 
-function openTab(tabName) {
-    document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
-    document.querySelectorAll(".tabs button").forEach(btn => btn.classList.remove("active"));
-    
-    document.getElementById(tabName + "-tab").classList.add("active");
-    document.getElementById("tab-" + tabName).classList.add("active");
-}
+// Adressen uit adressen.js koppelen
+document.addEventListener("DOMContentLoaded", function() {
+    wijk1Data = window.wijk1Data || [];
+    wijk2Data = window.wijk2Data || [];
 
-function loadAddresses() {
-    fetch('adressen.json')
-        .then(response => response.json())
-        .then(data => {
-            wijk1Data = data.wijk1;
-            wijk2Data = data.wijk2;
-            
-            displayAddresses('wijk1');
-            displayAddresses('wijk2');
-        })
-        .catch(error => {
-            console.error('Error loading the JSON file:', error);
-        });
-}
+    displayAddresses("wijk1");
+    displayAddresses("wijk2");
+});
 
 function displayAddresses(wijk) {
     const wijkList = document.getElementById(`address-list-${wijk}`);
-    wijkList.innerHTML = ""; // Maak de lijst eerst leeg
+    wijkList.innerHTML = ""; 
 
-    const data = wijk === 'wijk1' ? wijk1Data : wijk2Data;
+    const data = wijk === "wijk1" ? wijk1Data : wijk2Data;
 
     data.forEach((item, index) => {
+        let checked = getCheckboxStatus(wijk, index) ? "checked" : "";
         wijkList.innerHTML += `
             <tr data-index="${index}">
                 <td>${item.name}</td>
                 <td>${item.address}</td>
-                <td>${item.comment || ''}</td> <!-- Alleen de opmerking weergeven (geen invoerveld) -->
-                <td><input type="checkbox" onchange="handleCheckboxChange(event, '${wijk}', ${index})" ${item.delivered ? 'checked' : ''}></td>
+                <td>${item.comment || ""}</td>
+                <td><input type="checkbox" onchange="handleCheckboxChange(event, '${wijk}', ${index})" ${checked}></td>
             </tr>
         `;
     });
 }
 
+function handleCheckboxChange(event, wijk, index) {
+    let status = event.target.checked;
+    saveCheckboxStatus(wijk, index, status);
+}
+
 function saveCheckboxStatus(wijk, index, status) {
-    localStorage.setItem(`checkbox-status-${wijk}-${index}`, status);
+    localStorage.setItem(`checkbox-status-${wijk}-${index}`, JSON.stringify(status));
 }
 
 function getCheckboxStatus(wijk, index) {
@@ -52,15 +43,11 @@ function getCheckboxStatus(wijk, index) {
 
 function resetBezorgstatus(wijk) {
     const tableRows = document.querySelectorAll(`#address-list-${wijk} tr`);
-    tableRows.forEach(row => {
-        row.style.display = '';  // Zorg ervoor dat alle rijen zichtbaar zijn
-        row.querySelector('input[type="checkbox"]').checked = false; // Zet de checkbox uit
+    tableRows.forEach((row, index) => {
+        row.querySelector('input[type="checkbox"]').checked = false;
+        localStorage.removeItem(`checkbox-status-${wijk}-${index}`);
     });
-    const data = wijk === 'wijk1' ? wijk1Data : wijk2Data;
-    data.forEach(item => item.delivered = false);
 }
 
 document.getElementById("reset-button-wijk1").addEventListener("click", () => resetBezorgstatus("wijk1"));
 document.getElementById("reset-button-wijk2").addEventListener("click", () => resetBezorgstatus("wijk2"));
-
-document.addEventListener("DOMContentLoaded", loadAddresses);

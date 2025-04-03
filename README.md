@@ -1,1 +1,1 @@
-# Kerbode
+# HHk Scherpenzeel kerkblad

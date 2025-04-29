@@ -14,6 +14,7 @@ const wijk1Data = [
     { "name": "Fam. van de Zandschulph", "address": "Valleilaan 27", "comment": "" },
     { "name": "Fam. Overeem", "address": "Grebbelaan 16", "comment": "" },
     { "name": "Dhr. Blankenstijn", "address": "Koepellaan 42", "comment": "" },
+    { "name": "Mvr. van den Berg", "address": "Koepellaan 66", "comment": "" },
     { "name": "Fam. Davelaar", "address": "Broekerlaan 27", "comment": "" },
     { "name": "Fam. Bakker", "address": "Broekerlaan 5", "comment": "" },
     { "name": "Fam. Verwoerd", "address": "Broekerlaan 1", "comment": "" },

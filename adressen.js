@@ -82,6 +82,7 @@ const wijk2Data = [
     { "name": "Fam. Leijen", "address": "Rembrandtlaan 84", "comment": "" },
     { "name": "Fam. Koppe", "address": "Paulus Potterlaan 19", "comment": "" },
     { "name": "Fam. v.d. Brink", "address": "Paulus Potterlaan 21", "comment": "" },
+    { "name": "Fam. Versteeg Duim", "address": "Burg. H.v. Konijnenburglaan 25", "comment": "" },
     { "name": "Fam. de Kruijf", "address": "Burg. H.v. Konijnenburglaan 34", "comment": "" },
     { "name": "Fam. Gardenier", "address": "Burg. H.v. Konijnenburglaan 30", "comment": "" },
     { "name": "Dhr. Kampert", "address": "Burg. H.v. Konijnenburglaan 13", "comment": "" },

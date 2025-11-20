@@ -47,7 +47,6 @@ const wijk1Data = [
 // Adressen voor wijk 2
 const wijk2Data = [
     { "name": "Mw. van de Broek", "address": "Vermeerlaan 1", "comment": "" },
-    { "name": "Wilmar Hardeman", "address": "Glashorst 46", "comment": "" },
     { "name": "Fam. Wisse", "address": "Glashorst 68", "comment": "" },
     { "name": "Fam. de Jager", "address": "Glashorst 70", "comment": "" },
     { "name": "Fam. Velthuizen", "address": "Pluimenweg 17", "comment": "" },

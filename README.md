@@ -1,1 +1,1 @@
-# HHk Scherpenzeel kerkbode
+# HHk Scherpenzeel kerkbode bezorglijst

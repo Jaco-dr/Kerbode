@@ -89,4 +89,4 @@ const wijk2Data = [
     { "name": "Fam. v.d. Wetering", "address": "Frans Halslaan 20", "comment": "" },
     { "name": "Fam. Schouten", "address": "Frans Halslaan 34", "comment": "" },
     { "name": "Fam. de Ruiter", "address": "Burg. H v. Konijnenburglaan 14", "comment": "" }
-];
+ ];

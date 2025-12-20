@@ -59,6 +59,7 @@ const wijk2Data = [
     { "name": "Fam. Haanschoten", "address": "Stationsweg 338", "comment": "" },
     { "name": "Fam. van Dijkhuizen", "address": "Industrielaan 4", "comment": "" },
     { "name": "Fam. van den Bosch", "address": "Burg. Röell-laan 9", "comment": "" },
+    { "name": "Fam. Berkhof", "address": "Holevoetlaan 27", "comment": "" },
     { "name": "Mw. Mulder", "address": "Holevoetlaan 45", "comment": "" },
     { "name": "Fam. Westeneng", "address": "Het Pella 1", "comment": "" },
     { "name": "Fam. Brand", "address": "Burg. Colijn de Raadsingel 12", "comment": "" },

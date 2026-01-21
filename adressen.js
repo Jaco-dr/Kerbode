@@ -48,6 +48,7 @@ const wijk1Data = [
 // Adressen voor wijk 2
 const wijk2Data = [
     { "name": "Mw. van de Broek", "address": "Vermeerlaan 1", "comment": "" },
+    { "name": "M. Hardeman", "address": "Glashorst 39", "comment": "" },
     { "name": "Fam. Wisse", "address": "Glashorst 68", "comment": "" },
     { "name": "Fam. de Jager", "address": "Glashorst 70", "comment": "" },
     { "name": "Fam. Velthuizen", "address": "Pluimenweg 17", "comment": "" },
@@ -83,6 +84,7 @@ const wijk2Data = [
     { "name": "Fam. Koppe", "address": "Paulus Potterlaan 19", "comment": "" },
     { "name": "Fam. v.d. Brink", "address": "Paulus Potterlaan 21", "comment": "" },
     { "name": "Fam. Versteeg Duim", "address": "Burg. H.v. Konijnenburglaan 25", "comment": "" },
+    { "name": "W. van Ossane", "address": "Burg. H.v. Konijnenburglaan 40", "comment": "" },
     { "name": "Fam. de Kruijf", "address": "Burg. H.v. Konijnenburglaan 34", "comment": "" },
     { "name": "Fam. Gardenier", "address": "Burg. H.v. Konijnenburglaan 30", "comment": "" },
     { "name": "Dhr. Kampert", "address": "Burg. H.v. Konijnenburglaan 13", "comment": "" },

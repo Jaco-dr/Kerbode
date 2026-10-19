@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js" defer></script>
-  <script src="adressen.js" defer></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -28,7 +27,14 @@
       <p class="intro-copy">Houd eenvoudig bij welke adressen al zijn bezorgd.</p>
     </section>
 
-    <section class="workspace" aria-label="Bezorglijst">
+    <section id="auth-gate" class="auth-gate" aria-labelledby="auth-gate-title">
+      <span class="eyebrow">PRIVÉ BEZORGLIJST</span>
+      <h2 id="auth-gate-title">Inloggen om de lijst te openen</h2>
+      <p id="auth-gate-message">Met je bezorgeraccount kun je de adressen en bezorgstatus bekijken.</p>
+      <button id="admin-button" class="edit-mode-button" type="button" hidden>Inloggen</button>
+    </section>
+
+    <section id="app-workspace" class="workspace" aria-label="Bezorglijst" hidden>
       <div class="list-heading">
         <div>
           <p class="eyebrow">JOUW ROUTE</p>
@@ -60,13 +66,14 @@
               <button class="filter-button is-selected" data-filter="all" aria-pressed="true">Alles</button>
               <button class="filter-button" data-filter="todo" aria-pressed="false">Nog te bezorgen</button>
             </div>
-            <button id="admin-button" class="edit-mode-button" type="button" hidden>Beheerder aanmelden</button>
+            <button id="account-button" class="edit-mode-button" type="button" hidden>Afmelden</button>
             <button id="edit-mode-button" class="edit-mode-button" type="button" aria-pressed="false" hidden><span aria-hidden="true">✎</span> <span id="edit-mode-label">Bewerken</span></button>
             <button id="add-address" class="add-button" type="button" hidden><span aria-hidden="true">＋</span> <span id="add-address-label">Adres toevoegen</span></button>
           </div>
         </div>
         <p id="sync-status" class="sync-status" role="status" aria-live="polite"></p>
-        <button id="seed-addresses" class="add-button" type="button" hidden>Startadressen op deze telefoon delen</button>
+        <button id="seed-addresses" class="add-button" type="button" hidden>Startadressen delen</button>
+        <input id="seed-file" type="file" accept=".js,text/javascript" hidden>
         <p id="insert-hint" class="insert-hint" aria-live="polite" hidden></p>
 
         <div class="table-wrap">
@@ -91,7 +98,7 @@
         </div>
       </div>
     </section>
-    <p class="privacy-note"><span aria-hidden="true">▣</span> Met de gedeelde versie zien alle bezorgers dezelfde adressen en voortgang.</p>
+  <p class="privacy-note"><span aria-hidden="true">▣</span> Aanmelden is nodig om de adressenlijst te bekijken.</p>
   </main>
 
   <dialog id="reset-dialog" class="confirm-dialog" aria-labelledby="dialog-title">
@@ -136,8 +143,8 @@
   <dialog id="admin-dialog" class="confirm-dialog address-dialog" aria-labelledby="admin-dialog-title">
     <form id="admin-form" method="dialog">
       <span class="dialog-mark" aria-hidden="true">♙</span>
-      <h2 id="admin-dialog-title">Beheerder aanmelden</h2>
-      <p>Log in om adressen toe te voegen, aan te passen of te verwijderen.</p>
+      <h2 id="admin-dialog-title">Bezorger aanmelden</h2>
+      <p>Na aanmelding kun je de adressenlijst bekijken en bezorgvinkjes bijwerken. Beheerfuncties zijn alleen voor de beheerder.</p>
       <label class="field-label" for="admin-email">E-mailadres</label>
       <input id="admin-email" name="email" type="email" required autocomplete="username">
       <label class="field-label" for="admin-password">Wachtwoord</label>

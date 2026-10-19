@@ -5,14 +5,15 @@
   const cloudConfigured = Boolean(cloudConfig.url && cloudConfig.anonKey && window.supabase?.createClient);
   const cloud = cloudConfigured ? window.supabase.createClient(cloudConfig.url, cloudConfig.anonKey) : null;
   const routes = {
-    wijk1: { title: 'Wijk 1', people: 'Jeroen & Elize', data: wijk1Data.map((item) => ({ ...item })) },
-    wijk2: { title: 'Wijk 2', people: 'Jaco & Jo-Anneke', data: wijk2Data.map((item) => ({ ...item })) }
+    wijk1: { title: 'Wijk 1', people: 'Jeroen & Elize', data: [] },
+    wijk2: { title: 'Wijk 2', people: 'Jaco & Jo-Anneke', data: [] }
   };
   const status = { wijk1: {}, wijk2: {} };
   let activeWijk = 'wijk1';
   let activeFilter = 'all';
   let editMode = false;
   let isAdmin = false;
+  let isAuthenticated = false;
   let insertionAnchor = null;
   let editingItem = null;
   let deletingItem = null;
@@ -33,6 +34,11 @@
   const adminError = document.querySelector('#admin-error');
   const syncStatus = document.querySelector('#sync-status');
   const seedButton = document.querySelector('#seed-addresses');
+  const seedFile = document.querySelector('#seed-file');
+  const authGate = document.querySelector('#auth-gate');
+  const authGateMessage = document.querySelector('#auth-gate-message');
+  const workspace = document.querySelector('#app-workspace');
+  const accountButton = document.querySelector('#account-button');
 
   function setSyncMessage(message, type = '') {
     syncStatus.textContent = message;
@@ -52,7 +58,7 @@
   }
 
   async function loadSharedData({ quiet = false } = {}) {
-    if (!cloudConfigured || remoteLoadBusy) return;
+    if (!cloudConfigured || !isAuthenticated || remoteLoadBusy) return;
     remoteLoadBusy = true;
     try {
       const { data: addressRows, error: addressError } = await cloud
@@ -136,8 +142,7 @@
             delivered: item.delivered === true
           }))
           .filter((item) => item.name && item.address);
-        // An empty saved list can result from a previous failed load. Keep the
-        // bundled address list and repair storage instead of showing 0 / 0.
+        // A private, authenticated list is intentionally not bundled in the site files.
         if (savedRows.length > 0) routes[wijk].data = savedRows;
         saveAddresses(wijk);
       }
@@ -208,6 +213,7 @@
     visual.textContent = '✓';
     checkWrap.append(checkbox, visual);
     checkbox.addEventListener('change', () => {
+      if (!isAuthenticated) { checkbox.checked = false; return; }
       status[activeWijk][key] = checkbox.checked;
       row.classList.toggle('is-delivered', checkbox.checked);
       saveStatus(activeWijk);
@@ -281,17 +287,23 @@
 
   function render() {
     const route = routes[activeWijk];
-    adminButton.hidden = !cloudConfigured;
-    adminButton.textContent = isAdmin ? 'Beheerder afmelden' : 'Beheerder aanmelden';
-    document.querySelector('#edit-mode-button').hidden = cloudConfigured && !isAdmin;
+    authGate.hidden = isAuthenticated;
+    workspace.hidden = !isAuthenticated;
+    adminButton.hidden = !cloudConfigured || isAuthenticated;
+    authGateMessage.textContent = cloudConfigured
+      ? 'Log in met je persoonlijke account. Bezorgers kunnen de bezorgstatus bijwerken; alleen de beheerder kan adressen aanpassen.'
+      : 'De lijst is afgeschermd. De beheerder moet eerst Supabase instellen om accounts en gedeelde toegang te activeren.';
+    accountButton.hidden = !isAuthenticated;
+    document.querySelector('#edit-mode-button').hidden = !isAdmin || !isAuthenticated;
     document.querySelector('.address-table').classList.toggle('is-editing', editMode);
     document.querySelector('#edit-mode-button').setAttribute('aria-pressed', String(editMode));
     document.querySelector('#edit-mode-label').textContent = editMode ? 'Bewerken stoppen' : 'Bewerken';
-    document.querySelector('#add-address').hidden = !editMode || (cloudConfigured && !isAdmin);
+    document.querySelector('#add-address').hidden = !editMode || !isAdmin || !isAuthenticated;
+    document.querySelector('#reset-button').hidden = !isAdmin || !isAuthenticated;
     seedButton.hidden = !cloudConfigured || !remoteAddressesEmpty || !isAdmin;
     document.querySelector('#add-address-label').textContent = insertionAnchor ? 'Hieronder toevoegen' : 'Adres toevoegen';
     const insertHint = document.querySelector('#insert-hint');
-    insertHint.hidden = !editMode;
+    insertHint.hidden = !editMode || !isAdmin;
     insertHint.textContent = insertionAnchor
       ? `Nieuw adres komt direct onder ${insertionAnchor.name}.`
       : 'Kies links bij een adres ↳ als invoegplek. Zonder keuze komt het nieuwe adres onderaan.';
@@ -302,12 +314,12 @@
       const matchesTerm = !term || normalized(`${item.name} ${item.address} ${item.comment || ''}`).includes(term);
       return matchesStatus && matchesTerm;
     });
-    list.replaceChildren(...matches.map(makeCard));
-    emptyState.hidden = matches.length > 0;
+    list.replaceChildren(...(isAuthenticated ? matches.map(makeCard) : []));
+    emptyState.hidden = !isAuthenticated || matches.length > 0;
     emptyState.textContent = activeFilter === 'todo' && !term
       ? 'Alles is bezorgd in deze wijk.'
       : 'Geen adressen gevonden. Probeer een andere zoekterm.';
-    document.querySelector('#visible-count').textContent = `${matches.length} ${matches.length === 1 ? 'adres' : 'adressen'}`;
+    document.querySelector('#visible-count').textContent = isAuthenticated ? `${matches.length} ${matches.length === 1 ? 'adres' : 'adressen'}` : '';
     document.querySelector('#route-title').textContent = route.title;
     document.querySelector('#route-people').textContent = `Bezorgers: ${route.people}`;
     updateProgress();
@@ -382,7 +394,7 @@
   });
 
   document.querySelector('#edit-mode-button').addEventListener('click', () => {
-    if (cloudConfigured && !isAdmin) return;
+    if (!isAdmin) return;
     editMode = !editMode;
     if (!editMode) insertionAnchor = null;
     render();
@@ -390,18 +402,18 @@
   document.querySelector('#add-address').addEventListener('click', () => openAddressDialog());
   adminButton.addEventListener('click', async () => {
     if (!cloudConfigured) return;
-    if (isAdmin) {
+    adminError.hidden = true;
+    adminForm.reset();
+    adminDialog.showModal();
+  });
+  accountButton.addEventListener('click', async () => {
+    if (!cloudConfigured || !isAuthenticated) return;
       try {
         const { error } = await cloud.auth.signOut();
         if (error) throw error;
       } catch (error) {
         setSyncMessage(`Afmelden lukt niet: ${error.message}`, 'error');
       }
-      return;
-    }
-    adminError.hidden = true;
-    adminForm.reset();
-    adminDialog.showModal();
   });
   document.querySelector('#cancel-admin').addEventListener('click', () => adminDialog.close());
   adminForm.addEventListener('submit', async (event) => {
@@ -421,6 +433,14 @@
     }
   });
   seedButton.addEventListener('click', async () => {
+    if (!cloudConfigured || !isAdmin || !remoteAddressesEmpty) return;
+    if (!routes.wijk1.data.length && !routes.wijk2.data.length) {
+      seedFile.click();
+      return;
+    }
+    await seedCurrentAddresses();
+  });
+  async function seedCurrentAddresses() {
     if (!cloudConfigured || !isAdmin || !remoteAddressesEmpty) return;
     seedButton.disabled = true;
     setSyncMessage('Startadressen worden gedeeld…');
@@ -442,6 +462,25 @@
     } finally {
       seedButton.disabled = false;
     }
+  }
+  seedFile.addEventListener('change', async () => {
+    const file = seedFile.files?.[0];
+    if (!file || !isAdmin) return;
+    try {
+      const source = await file.text();
+      for (const [wijk, variable] of [['wijk1', 'wijk1Data'], ['wijk2', 'wijk2Data']]) {
+        const match = source.match(new RegExp(`(?:const|let|var)\\s+${variable}\\s*=\\s*(\\[[\\s\\S]*?\\])\\s*;`));
+        if (!match) throw new Error(`De lijst ${variable} ontbreekt in dit bestand.`);
+        const rows = JSON.parse(match[1]);
+        if (!Array.isArray(rows)) throw new Error(`De lijst ${variable} is ongeldig.`);
+        routes[wijk].data = rows.filter((row) => row && row.name && row.address).map((row) => ({ name: String(row.name), address: String(row.address), comment: String(row.comment || ''), delivered: row.delivered === true }));
+        loadStatus(wijk);
+      }
+      if (!routes.wijk1.data.length && !routes.wijk2.data.length) throw new Error('Het bestand bevat geen adressen.');
+      await seedCurrentAddresses();
+    } catch (error) {
+      setSyncMessage(`Startadressen niet ingelezen: ${error.message}`, 'error');
+    } finally { seedFile.value = ''; }
   });
   document.querySelector('#cancel-address').addEventListener('click', () => addressDialog.close());
   addressForm.addEventListener('submit', async (event) => {
@@ -457,8 +496,8 @@
     const addressField = document.querySelector('#field-address');
     addressField.setCustomValidity(duplicate ? 'Dit adres staat al in deze wijk.' : '');
     if (duplicate) { addressField.reportValidity(); return; }
-    if (cloudConfigured && !isAdmin) {
-      setSyncMessage('Log in als beheerder om adressen aan te passen.', 'error');
+    if (!cloudConfigured || !isAdmin) {
+      setSyncMessage('Stel de gedeelde opslag in en meld je aan als beheerder om adressen aan te passen.', 'error');
       return;
     }
     if (editingItem) {
@@ -501,6 +540,8 @@
         setSyncMessage(`Adres kon niet worden verwijderd: ${error.message}`, 'error');
         return;
       }
+    } else {
+      return;
     }
     if (insertionAnchor === deletingItem) insertionAnchor = null;
     routes[activeWijk].data = routes[activeWijk].data.filter((item) => item !== deletingItem);
@@ -515,6 +556,7 @@
   document.querySelector('#reset-button').addEventListener('click', () => resetDialog.showModal());
   document.querySelector('#confirm-reset').addEventListener('click', async (event) => {
     event.preventDefault();
+    if (!isAdmin || !isAuthenticated) return;
     status[activeWijk] = {};
     saveStatus(activeWijk);
     if (cloudConfigured) {
@@ -543,22 +585,42 @@
     if (!cloud) setSyncMessage('De cloudbibliotheek is niet geladen. Controleer je internetverbinding.', 'error');
     else {
       cloud.auth.onAuthStateChange((_event, session) => {
-        isAdmin = Boolean(session?.user);
-        if (!isAdmin) editMode = false;
-        render();
-        loadSharedData();
+        window.setTimeout(async () => {
+          isAuthenticated = Boolean(session?.user);
+          isAdmin = false;
+          if (isAuthenticated) {
+            const { data: manager, error } = await cloud.from('managers').select('user_id').eq('user_id', session.user.id).maybeSingle();
+            if (error) setSyncMessage(`Beheerdersrol kon niet worden gecontroleerd: ${error.message}`, 'error');
+            isAdmin = Boolean(manager);
+          } else {
+            for (const wijk of Object.keys(routes)) { routes[wijk].data = []; status[wijk] = {}; }
+            remoteAddressesEmpty = false;
+            editMode = false;
+          }
+          render();
+          if (isAuthenticated) await loadSharedData();
+        }, 0);
       });
       cloud.auth.getSession().then(({ data, error }) => {
         if (error) throw error;
-        isAdmin = Boolean(data.session?.user);
+        const session = data.session;
+        isAuthenticated = Boolean(session?.user);
+        if (isAuthenticated) {
+          return cloud.from('managers').select('user_id').eq('user_id', session.user.id).maybeSingle().then(({ data: manager, error: roleError }) => {
+            if (roleError) throw roleError;
+            isAdmin = Boolean(manager);
+            render();
+            return loadSharedData();
+          });
+        }
         render();
-        return loadSharedData();
+        return undefined;
       }).catch((error) => setSyncMessage(`Verbinding lukt niet: ${error.message}`, 'error'));
       window.setInterval(() => {
-        if (document.visibilityState === 'visible' && !editMode && !addressDialog.open && !deleteDialog.open) loadSharedData({ quiet: true });
+        if (isAuthenticated && document.visibilityState === 'visible' && !editMode && !addressDialog.open && !deleteDialog.open) loadSharedData({ quiet: true });
       }, 10000);
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && !editMode) loadSharedData({ quiet: true });
+        if (isAuthenticated && document.visibilityState === 'visible' && !editMode) loadSharedData({ quiet: true });
       });
     }
   }

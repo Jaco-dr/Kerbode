@@ -1,258 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kerkblad HHK Scherpenzeel- Renswoude</title>
-    <style>
-        /* Algemene bodystijl */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7fc;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-        }
-
-        /* Tabbladen styling */
-        .tabs {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .tabs button {
-            padding: 12px 24px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            background-color: #e0f7fa;
-            color: #00796b;
-            font-size: 16px;
-            border-radius: 10px;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            transition: background-color 0.3s, color 0.3s, transform 0.2s ease;
-            flex-grow: 1;
-        }
-
-        .tabs button:hover {
-            background-color: #4caf50;
-            color: white;
-            transform: scale(1.05);
-        }
-
-        .tabs button.active {
-            background-color: #00796b;
-            color: white;
-        }
-
-        /* Tabblad inhoud styling */
-        .tab-content {
-            display: none;
-            width: 90%;
-            max-width: 800px;
-            background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Tabelstijl */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            text-align: left;
-            font-size: 16px;
-            color: #333;
-            background-color: #fafafa;
-        }
-
-        th {
-            background-color: #e0f7fa;
-            font-weight: bold;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        /* Knopstijl */
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
-            transition: background-color 0.3s, transform 0.3s;
-        }
-
-        button:hover {
-            background-color: #45a049;
-            transform: scale(1.05);
-        }
-
-        /* Invoer velden styling */
-        input[type="checkbox"] {
-            margin-left: 10px;
-        }
-
-        /* Responsieve weergave */
-        @media (max-width: 768px) {
-            .tabs button {
-                width: 100%; /* Zorgt ervoor dat de knoppen onder elkaar komen op kleinere schermen */
-                margin-right: 0;
-            }
-
-            .tab-content {
-                width: 100%; /* Maak de inhoud breder voor kleinere schermen */
-                padding: 15px;
-            }
-
-            th, td {
-                font-size: 14px; /* Kleinere tekst voor kleinere schermen */
-                padding: 10px;
-            }
-
-            button {
-                width: 100%; /* Maak knoppen breder op kleinere schermen */
-            }
-
-            table {
-                font-size: 14px; /* Kleinere lettergrootte voor tabellen op mobiel */
-            }
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f0e3">
+  <meta name="description" content="De digitale bezorglijst voor de kerkbode in Scherpenzeel en Renswoude.">
+  <title>Kerkbode bezorgen — Scherpenzeel &amp; Renswoude</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="adressen.js" defer></script>
+  <script src="script.js" defer></script>
 </head>
 <body>
+  <header class="topbar">
+    <a class="brand" href="#lijst" aria-label="Kerkbode bezorglijst, naar begin">
+      <img class="brand-logo" src="assets/kerkbode-logo.png" alt="" width="46" height="46">
+      <span>Kerkbode<span class="brand-sub">BEZORGLIJST</span></span>
+    </a>
+    <span class="location"><span class="location-dot" aria-hidden="true"></span>Scherpenzeel &amp; Renswoude</span>
+  </header>
 
-    <!-- Tabbladen -->
-    <div class="tabs">
-        <button id="tab-wijk1" class="active" onclick="openTab('wijk1')">Bezorglijst Wijk 1</button>
-        <button id="tab-wijk2" onclick="openTab('wijk2')">Bezorglijst Wijk 2</button>
-    </div>
+  <main id="lijst" class="page-shell">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">MAANDELIJKSE RONDE</p>
+      <h1 id="page-title">Op pad met de <em>kerkbode.</em></h1>
+      <p class="intro-copy">Houd eenvoudig bij welke adressen al zijn bezorgd.</p>
+    </section>
 
-    <!-- Bezorglijst Wijk 1 -->
-    <div id="wijk1-tab" class="tab-content active">
-        <h2>Bezorglijst wijk 1 (Jeroen & Elize)</h2>
-        <table>
+    <section class="workspace" aria-label="Bezorglijst">
+      <div class="list-heading">
+        <div>
+          <p class="eyebrow">JOUW ROUTE</p>
+          <h2 id="route-title">Wijk 1</h2>
+          <p id="route-people" class="route-people"></p>
+        </div>
+        <div class="progress-box" aria-live="polite">
+          <span class="progress-label">VOORTGANG</span>
+          <span class="progress-value"><strong id="progress-count">0</strong><span id="progress-total"> / 0</span></span>
+          <div class="progress-track" role="progressbar" aria-label="Bezorgvoortgang" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div>
+        </div>
+      </div>
+
+      <nav class="route-tabs" aria-label="Kies een wijk" role="tablist">
+        <button class="route-tab is-active" id="tab-wijk1" role="tab" aria-selected="true" aria-controls="wijk-panel" data-wijk="wijk1">Wijk 1 <span id="count-wijk1">0</span></button>
+        <button class="route-tab" id="tab-wijk2" role="tab" aria-selected="false" aria-controls="wijk-panel" data-wijk="wijk2">Wijk 2 <span id="count-wijk2">0</span></button>
+      </nav>
+
+      <div id="wijk-panel" class="panel" role="tabpanel" aria-labelledby="tab-wijk1">
+        <div class="toolbar">
+          <label class="search-box">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <span class="visually-hidden">Zoek op naam, adres of opmerking</span>
+            <input id="search" type="search" placeholder="Zoek naam of adres…" autocomplete="off">
+            <kbd>/</kbd>
+          </label>
+          <div class="toolbar-actions">
+            <div class="filter-group" role="group" aria-label="Filter bezorgstatus">
+              <button class="filter-button is-selected" data-filter="all" aria-pressed="true">Alles</button>
+              <button class="filter-button" data-filter="todo" aria-pressed="false">Nog te bezorgen</button>
+            </div>
+            <button id="edit-mode-button" class="edit-mode-button" type="button" aria-pressed="false"><span aria-hidden="true">✎</span> <span id="edit-mode-label">Bewerken</span></button>
+            <button id="add-address" class="add-button" type="button" hidden><span aria-hidden="true">＋</span> <span id="add-address-label">Adres toevoegen</span></button>
+          </div>
+        </div>
+        <p id="insert-hint" class="insert-hint" aria-live="polite" hidden></p>
+
+        <div class="table-wrap">
+          <table class="address-table">
             <thead>
-                <tr>
-                    <th>Naam</th>
-                    <th>Adres</th>
-                    <th>Opmerkingen</th>
-                    <th>Bezorgd</th>
-                </tr>
+              <tr>
+                <th scope="col" class="th-insert"><span class="visually-hidden">Invoegplek</span></th>
+                <th scope="col">Naam</th>
+                <th scope="col">Adres</th>
+                <th scope="col">Opmerking</th>
+                <th scope="col" class="th-delivered">Bezorgd</th>
+                <th scope="col" class="th-actions">Acties</th>
+              </tr>
             </thead>
-            <tbody id="address-list-wijk1"></tbody>
-        </table>
-        <button id="reset-button-wijk1">Reset Bezorgstatus</button>
-    </div>
+            <tbody id="address-list" aria-live="polite"></tbody>
+          </table>
+        </div>
+        <p id="empty-state" class="empty-state" hidden>Geen adressen gevonden. Probeer een andere zoekterm.</p>
+        <div class="list-footer">
+          <span id="visible-count"></span>
+          <button id="reset-button" class="reset-button" type="button"><span aria-hidden="true">↺</span> Ronde opnieuw beginnen</button>
+        </div>
+      </div>
+    </section>
+    <p class="privacy-note"><span aria-hidden="true">▣</span> Je adressen en voortgang worden alleen op dit apparaat bewaard.</p>
+  </main>
 
-    <!-- Bezorglijst Wijk 2 -->
-    <div id="wijk2-tab" class="tab-content">
-        <h2>Bezorglijst wijk 2 (Jaco & Jo-Anneke)</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Naam</th>
-                    <th>Adres</th>
-                    <th>Opmerkingen</th>
-                    <th>Bezorgd</th>
-                </tr>
-            </thead>
-            <tbody id="address-list-wijk2"></tbody>
-        </table>
-        <button id="reset-button-wijk2">Reset Bezorgstatus</button>
-    </div>
-
-    <!-- Inladen van adressen.js -->
-    <script src="adressen.js"></script>
-    <script>
-        // Functie om de actieve tab te openen
-        function openTab(tabName) {
-            // Alle tabbladen verbergen
-            document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
-            document.querySelectorAll(".tabs button").forEach(btn => btn.classList.remove("active"));
-
-            // Actieve tab tonen
-            document.getElementById(tabName + "-tab").classList.add("active");
-            document.getElementById("tab-" + tabName).classList.add("active");
-
-            // Adressen weergeven voor de actieve wijk
-            displayAddresses(tabName);
-        }
-
-        // Adressen weergeven in de tab
-        function displayAddresses(wijk) {
-            const wijkList = document.getElementById(`address-list-${wijk}`);
-            wijkList.innerHTML = ""; // Maak de lijst eerst leeg
-
-            const data = wijk === 'wijk1' ? wijk1Data : wijk2Data;
-
-            data.forEach((item, index) => {
-                wijkList.innerHTML += `
-                    <tr data-index="${index}">
-                        <td>${item.name}</td>
-                        <td>${item.address}</td>
-                        <td>${item.comment || ''}</td>
-                        <td><input type="checkbox" onchange="handleCheckboxChange(event, '${wijk}', ${index})" ${item.delivered ? 'checked' : ''}></td>
-                    </tr>
-                `;
-            });
-        }
-
-        // Functie die wordt aangeroepen wanneer een checkbox wordt aangevinkt
-        function handleCheckboxChange(event, wijk, index) {
-            const data = wijk === 'wijk1' ? wijk1Data : wijk2Data;
-
-            if (event.target.checked) {
-                data[index].delivered = true;
-            } else {
-                data[index].delivered = false;
-            }
-        }
-
-        // Reset Bezorgstatus functie
-        function resetBezorgstatus(wijk) {
-            const tableRows = document.querySelectorAll(`#address-list-${wijk} tr`);
-            tableRows.forEach(row => {
-                row.style.display = '';  // Zorg ervoor dat alle rijen zichtbaar zijn
-                row.querySelector('input[type="checkbox"]').checked = false; // Zet de checkbox uit
-            });
-            const data = wijk === 'wijk1' ? wijk1Data : wijk2Data;
-            data.forEach(item => item.delivered = false);
-        }
-
-        document.getElementById("reset-button-wijk1").addEventListener("click", () => resetBezorgstatus("wijk1"));
-        document.getElementById("reset-button-wijk2").addEventListener("click", () => resetBezorgstatus("wijk2"));
-
-        // Laden van adressen bij het openen van de pagina
-        document.addEventListener("DOMContentLoaded", () => {
-            displayAddresses('wijk1');
-            displayAddresses('wijk2');
-        });
-    </script>
+  <dialog id="reset-dialog" class="confirm-dialog" aria-labelledby="dialog-title">
+    <form method="dialog">
+      <span class="dialog-mark" aria-hidden="true">↺</span>
+      <h2 id="dialog-title">Opnieuw beginnen?</h2>
+      <p>De bezorgvinkjes van deze wijk worden gewist.</p>
+      <div class="dialog-actions">
+        <button class="cancel-button" value="cancel">Annuleren</button>
+        <button id="confirm-reset" class="confirm-button" value="confirm">Wis voortgang</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="address-dialog" class="confirm-dialog address-dialog" aria-labelledby="address-dialog-title">
+    <form id="address-form" method="dialog">
+      <span class="dialog-mark" aria-hidden="true">＋</span>
+      <h2 id="address-dialog-title">Adres toevoegen</h2>
+      <p id="address-dialog-copy">Voeg een adres toe aan deze wijk.</p>
+      <label class="field-label" for="field-name">Naam <span aria-hidden="true">*</span></label>
+      <input id="field-name" name="name" required maxlength="120" autocomplete="name">
+      <label class="field-label" for="field-address">Adres <span aria-hidden="true">*</span></label>
+      <input id="field-address" name="address" required maxlength="160" autocomplete="street-address">
+      <label class="field-label" for="field-comment">Opmerking <span class="optional">(optioneel)</span></label>
+      <input id="field-comment" name="comment" maxlength="100" placeholder="Bijvoorbeeld: 2 exemplaren">
+      <div class="dialog-actions">
+        <button id="cancel-address" class="cancel-button" type="button">Annuleren</button>
+        <button class="confirm-button" type="submit">Opslaan</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="delete-dialog" class="confirm-dialog" aria-labelledby="delete-dialog-title">
+    <form method="dialog">
+      <span class="dialog-mark delete-mark" aria-hidden="true">×</span>
+      <h2 id="delete-dialog-title">Adres verwijderen?</h2>
+      <p id="delete-dialog-copy">Dit adres wordt uit deze wijk verwijderd.</p>
+      <div class="dialog-actions">
+        <button class="cancel-button" value="cancel">Annuleren</button>
+        <button id="confirm-delete" class="delete-confirm-button" value="confirm">Adres verwijderen</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>

@@ -50,6 +50,11 @@ h2 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 22px;
 .panel { padding: 20px 30px 14px; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 13px; }
 .toolbar-actions { display: flex; align-items: center; gap: 9px; }
+.sync-status { margin: 0 0 9px; color: #777467; font-size: 11px; }
+.sync-status:empty { display: none; }
+.sync-status.is-error,.form-error { color: #985748; }
+.sync-status.is-success { color: #416c4e; }
+.form-error { margin-bottom: 0; }
 .search-box { display: flex; align-items: center; width: 270px; height: 38px; padding: 0 10px; border: 1px solid #e8e8e1; border-radius: 8px; background: #fff; }
 .search-box:focus-within { border-color: #9eaf9d; box-shadow: 0 0 0 3px rgba(54,94,73,.08); }
 .search-icon { margin-right: 7px; color: #899187; font-size: 20px; line-height: 1; transform: rotate(-20deg); }

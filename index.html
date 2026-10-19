@@ -7,6 +7,8 @@
   <meta name="description" content="De digitale bezorglijst voor de kerkbode in Scherpenzeel en Renswoude.">
   <title>Kerkbode bezorgen — Scherpenzeel &amp; Renswoude</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js" defer></script>
   <script src="adressen.js" defer></script>
   <script src="script.js" defer></script>
 </head>
@@ -58,10 +60,13 @@
               <button class="filter-button is-selected" data-filter="all" aria-pressed="true">Alles</button>
               <button class="filter-button" data-filter="todo" aria-pressed="false">Nog te bezorgen</button>
             </div>
-            <button id="edit-mode-button" class="edit-mode-button" type="button" aria-pressed="false"><span aria-hidden="true">✎</span> <span id="edit-mode-label">Bewerken</span></button>
+            <button id="admin-button" class="edit-mode-button" type="button" hidden>Beheerder aanmelden</button>
+            <button id="edit-mode-button" class="edit-mode-button" type="button" aria-pressed="false" hidden><span aria-hidden="true">✎</span> <span id="edit-mode-label">Bewerken</span></button>
             <button id="add-address" class="add-button" type="button" hidden><span aria-hidden="true">＋</span> <span id="add-address-label">Adres toevoegen</span></button>
           </div>
         </div>
+        <p id="sync-status" class="sync-status" role="status" aria-live="polite"></p>
+        <button id="seed-addresses" class="add-button" type="button" hidden>Startadressen op deze telefoon delen</button>
         <p id="insert-hint" class="insert-hint" aria-live="polite" hidden></p>
 
         <div class="table-wrap">
@@ -86,7 +91,7 @@
         </div>
       </div>
     </section>
-    <p class="privacy-note"><span aria-hidden="true">▣</span> Je adressen en voortgang worden alleen op dit apparaat bewaard.</p>
+    <p class="privacy-note"><span aria-hidden="true">▣</span> Met de gedeelde versie zien alle bezorgers dezelfde adressen en voortgang.</p>
   </main>
 
   <dialog id="reset-dialog" class="confirm-dialog" aria-labelledby="dialog-title">
@@ -125,6 +130,22 @@
       <div class="dialog-actions">
         <button class="cancel-button" value="cancel">Annuleren</button>
         <button id="confirm-delete" class="delete-confirm-button" value="confirm">Adres verwijderen</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="admin-dialog" class="confirm-dialog address-dialog" aria-labelledby="admin-dialog-title">
+    <form id="admin-form" method="dialog">
+      <span class="dialog-mark" aria-hidden="true">♙</span>
+      <h2 id="admin-dialog-title">Beheerder aanmelden</h2>
+      <p>Log in om adressen toe te voegen, aan te passen of te verwijderen.</p>
+      <label class="field-label" for="admin-email">E-mailadres</label>
+      <input id="admin-email" name="email" type="email" required autocomplete="username">
+      <label class="field-label" for="admin-password">Wachtwoord</label>
+      <input id="admin-password" name="password" type="password" required autocomplete="current-password">
+      <p id="admin-error" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button id="cancel-admin" class="cancel-button" type="button">Annuleren</button>
+        <button class="confirm-button" type="submit">Inloggen</button>
       </div>
     </form>
   </dialog>

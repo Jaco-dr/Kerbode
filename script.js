@@ -1,6 +1,9 @@
 (() => {
   const STATUS_PREFIX = 'kerkbode-status-v2-';
   const ADDRESS_PREFIX = 'kerkbode-addresses-v1-';
+  const cloudConfig = window.KERKBODE_CONFIG || {};
+  const cloudConfigured = Boolean(cloudConfig.url && cloudConfig.anonKey && window.supabase?.createClient);
+  const cloud = cloudConfigured ? window.supabase.createClient(cloudConfig.url, cloudConfig.anonKey) : null;
   const routes = {
     wijk1: { title: 'Wijk 1', people: 'Jeroen & Elize', data: wijk1Data.map((item) => ({ ...item })) },
     wijk2: { title: 'Wijk 2', people: 'Jaco & Jo-Anneke', data: wijk2Data.map((item) => ({ ...item })) }
@@ -9,9 +12,12 @@
   let activeWijk = 'wijk1';
   let activeFilter = 'all';
   let editMode = false;
+  let isAdmin = false;
   let insertionAnchor = null;
   let editingItem = null;
   let deletingItem = null;
+  let remoteAddressesEmpty = false;
+  let remoteLoadBusy = false;
 
   const list = document.querySelector('#address-list');
   const search = document.querySelector('#search');
@@ -21,6 +27,70 @@
   const addressDialog = document.querySelector('#address-dialog');
   const deleteDialog = document.querySelector('#delete-dialog');
   const addressForm = document.querySelector('#address-form');
+  const adminButton = document.querySelector('#admin-button');
+  const adminDialog = document.querySelector('#admin-dialog');
+  const adminForm = document.querySelector('#admin-form');
+  const adminError = document.querySelector('#admin-error');
+  const syncStatus = document.querySelector('#sync-status');
+  const seedButton = document.querySelector('#seed-addresses');
+
+  function setSyncMessage(message, type = '') {
+    syncStatus.textContent = message;
+    syncStatus.classList.toggle('is-error', type === 'error');
+    syncStatus.classList.toggle('is-success', type === 'success');
+  }
+
+  function remoteAddress(item, wijk, sortOrder) {
+    return {
+      id: item.id || crypto.randomUUID(),
+      wijk,
+      name: item.name,
+      address: item.address,
+      comment: item.comment || '',
+      sort_order: sortOrder
+    };
+  }
+
+  async function loadSharedData({ quiet = false } = {}) {
+    if (!cloudConfigured || remoteLoadBusy) return;
+    remoteLoadBusy = true;
+    try {
+      const { data: addressRows, error: addressError } = await cloud
+        .from('addresses').select('id,wijk,name,address,comment,sort_order').order('wijk').order('sort_order');
+      if (addressError) throw addressError;
+      remoteAddressesEmpty = addressRows.length === 0;
+      seedButton.hidden = !remoteAddressesEmpty || !isAdmin;
+      if (remoteAddressesEmpty) {
+        if (!quiet) setSyncMessage(isAdmin ? 'De gedeelde lijst is nog leeg. Importeer de startadressen vanaf dit apparaat.' : 'De gedeelde lijst wordt door de beheerder klaargezet.');
+        return;
+      }
+      const { data: statusRows, error: statusError } = await cloud
+        .from('delivery_status').select('address_id,delivered');
+      if (statusError) throw statusError;
+      for (const wijk of Object.keys(routes)) {
+        const rows = addressRows.filter((item) => item.wijk === wijk);
+        routes[wijk].data = rows.map((item) => ({ ...item }));
+        const statusById = new Map(statusRows.map((item) => [item.address_id, item.delivered]));
+        status[wijk] = {};
+        rows.forEach((item) => {
+          if (statusById.get(item.id) === true) status[wijk][addressKey(item)] = true;
+        });
+      }
+      render();
+      if (!quiet) setSyncMessage('Gedeelde lijst is bijgewerkt.', 'success');
+    } catch (error) {
+      setSyncMessage(`Synchroniseren lukt niet: ${error.message || 'controleer de Supabase-instellingen.'}`, 'error');
+    } finally {
+      remoteLoadBusy = false;
+    }
+  }
+
+  async function saveSharedAddresses(wijk) {
+    const payload = routes[wijk].data.map((item, index) => remoteAddress(item, wijk, index));
+    payload.forEach((item, index) => Object.assign(routes[wijk].data[index], { id: item.id, sort_order: item.sort_order }));
+    const { error } = await cloud.from('addresses').upsert(payload, { onConflict: 'id' });
+    if (error) throw error;
+  }
 
   function storageGet(key) {
     try { return localStorage.getItem(key); } catch { return null; }
@@ -143,6 +213,17 @@
       saveStatus(activeWijk);
       if (activeFilter === 'todo' && checkbox.checked) render();
       else updateProgress();
+      if (cloudConfigured && item.id) {
+        cloud.from('delivery_status').upsert({ address_id: item.id, delivered: checkbox.checked, updated_at: new Date().toISOString() }, { onConflict: 'address_id' })
+          .then(({ error }) => {
+            if (error) throw error;
+            setSyncMessage('Bezorgstatus is gedeeld.', 'success');
+          })
+          .catch((error) => {
+            setSyncMessage(`Bezorgstatus kon niet worden gedeeld: ${error.message}`, 'error');
+            loadSharedData({ quiet: true });
+          });
+      }
     });
 
     const name = document.createElement('td');
@@ -200,10 +281,14 @@
 
   function render() {
     const route = routes[activeWijk];
+    adminButton.hidden = !cloudConfigured;
+    adminButton.textContent = isAdmin ? 'Beheerder afmelden' : 'Beheerder aanmelden';
+    document.querySelector('#edit-mode-button').hidden = cloudConfigured && !isAdmin;
     document.querySelector('.address-table').classList.toggle('is-editing', editMode);
     document.querySelector('#edit-mode-button').setAttribute('aria-pressed', String(editMode));
     document.querySelector('#edit-mode-label').textContent = editMode ? 'Bewerken stoppen' : 'Bewerken';
-    document.querySelector('#add-address').hidden = !editMode;
+    document.querySelector('#add-address').hidden = !editMode || (cloudConfigured && !isAdmin);
+    seedButton.hidden = !cloudConfigured || !remoteAddressesEmpty || !isAdmin;
     document.querySelector('#add-address-label').textContent = insertionAnchor ? 'Hieronder toevoegen' : 'Adres toevoegen';
     const insertHint = document.querySelector('#insert-hint');
     insertHint.hidden = !editMode;
@@ -297,13 +382,69 @@
   });
 
   document.querySelector('#edit-mode-button').addEventListener('click', () => {
+    if (cloudConfigured && !isAdmin) return;
     editMode = !editMode;
     if (!editMode) insertionAnchor = null;
     render();
   });
   document.querySelector('#add-address').addEventListener('click', () => openAddressDialog());
+  adminButton.addEventListener('click', async () => {
+    if (!cloudConfigured) return;
+    if (isAdmin) {
+      try {
+        const { error } = await cloud.auth.signOut();
+        if (error) throw error;
+      } catch (error) {
+        setSyncMessage(`Afmelden lukt niet: ${error.message}`, 'error');
+      }
+      return;
+    }
+    adminError.hidden = true;
+    adminForm.reset();
+    adminDialog.showModal();
+  });
+  document.querySelector('#cancel-admin').addEventListener('click', () => adminDialog.close());
+  adminForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    adminError.hidden = true;
+    try {
+      const { error } = await cloud.auth.signInWithPassword({
+        email: document.querySelector('#admin-email').value.trim(),
+        password: document.querySelector('#admin-password').value
+      });
+      if (error) throw error;
+      adminDialog.close();
+      document.querySelector('#admin-password').value = '';
+    } catch {
+      adminError.textContent = 'Aanmelden is niet gelukt. Controleer je e-mailadres en wachtwoord.';
+      adminError.hidden = false;
+    }
+  });
+  seedButton.addEventListener('click', async () => {
+    if (!cloudConfigured || !isAdmin || !remoteAddressesEmpty) return;
+    seedButton.disabled = true;
+    setSyncMessage('Startadressen worden gedeeld…');
+    try {
+      const seedRows = Object.keys(routes).flatMap((wijk) => routes[wijk].data.map((item, index) => remoteAddress(item, wijk, index)));
+      const { data, error } = await cloud.from('addresses').insert(seedRows).select('id,wijk,name,address');
+      if (error) throw error;
+      const statusRows = data
+        .filter((item) => status[item.wijk][addressKey(item)] === true)
+        .map((item) => ({ address_id: item.id, delivered: true }));
+      if (statusRows.length) {
+        const { error: statusError } = await cloud.from('delivery_status').upsert(statusRows, { onConflict: 'address_id' });
+        if (statusError) throw statusError;
+      }
+      await loadSharedData({ quiet: true });
+      setSyncMessage('Startadressen en bestaande bezorgvinkjes zijn gedeeld.', 'success');
+    } catch (error) {
+      setSyncMessage(`Startadressen konden niet worden gedeeld: ${error.message}`, 'error');
+    } finally {
+      seedButton.disabled = false;
+    }
+  });
   document.querySelector('#cancel-address').addEventListener('click', () => addressDialog.close());
-  addressForm.addEventListener('submit', (event) => {
+  addressForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const updated = {
       name: document.querySelector('#field-name').value.trim(),
@@ -316,6 +457,10 @@
     const addressField = document.querySelector('#field-address');
     addressField.setCustomValidity(duplicate ? 'Dit adres staat al in deze wijk.' : '');
     if (duplicate) { addressField.reportValidity(); return; }
+    if (cloudConfigured && !isAdmin) {
+      setSyncMessage('Log in als beheerder om adressen aan te passen.', 'error');
+      return;
+    }
     if (editingItem) {
       const oldKey = addressKey(editingItem);
       Object.assign(editingItem, updated);
@@ -324,21 +469,39 @@
       delete status[activeWijk][oldKey];
       saveStatus(activeWijk);
     } else {
+      updated.id = crypto.randomUUID();
       const anchorIndex = insertionAnchor ? rows.indexOf(insertionAnchor) : -1;
       rows.splice(anchorIndex >= 0 ? anchorIndex + 1 : rows.length, 0, updated);
       insertionAnchor = updated;
       search.value = '';
     }
     saveAddresses(activeWijk);
+    if (cloudConfigured) {
+      try {
+        await saveSharedAddresses(activeWijk);
+      } catch (error) {
+        setSyncMessage(`Adres kon niet worden opgeslagen: ${error.message}`, 'error');
+        await loadSharedData({ quiet: true });
+        return;
+      }
+    }
     addressDialog.close();
     render();
   });
   document.querySelector('#address-form').addEventListener('input', () => document.querySelector('#field-address').setCustomValidity(''));
 
-  document.querySelector('#confirm-delete').addEventListener('click', (event) => {
+  document.querySelector('#confirm-delete').addEventListener('click', async (event) => {
     event.preventDefault();
     if (!deletingItem) return;
     const key = addressKey(deletingItem);
+    if (cloudConfigured) {
+      if (!isAdmin) return;
+      const { error } = await cloud.from('addresses').delete().eq('id', deletingItem.id);
+      if (error) {
+        setSyncMessage(`Adres kon niet worden verwijderd: ${error.message}`, 'error');
+        return;
+      }
+    }
     if (insertionAnchor === deletingItem) insertionAnchor = null;
     routes[activeWijk].data = routes[activeWijk].data.filter((item) => item !== deletingItem);
     delete status[activeWijk][key];
@@ -350,10 +513,19 @@
   });
 
   document.querySelector('#reset-button').addEventListener('click', () => resetDialog.showModal());
-  document.querySelector('#confirm-reset').addEventListener('click', (event) => {
+  document.querySelector('#confirm-reset').addEventListener('click', async (event) => {
     event.preventDefault();
     status[activeWijk] = {};
     saveStatus(activeWijk);
+    if (cloudConfigured) {
+      const payload = routes[activeWijk].data.map((item) => ({ address_id: item.id, delivered: false, updated_at: new Date().toISOString() }));
+      const { error } = await cloud.from('delivery_status').upsert(payload, { onConflict: 'address_id' });
+      if (error) {
+        setSyncMessage(`Voortgang kon niet worden gewist: ${error.message}`, 'error');
+        await loadSharedData({ quiet: true });
+        return;
+      }
+    }
     resetDialog.close();
     render();
   });
@@ -363,5 +535,31 @@
     loadStatus(wijk);
   });
   document.querySelectorAll('.route-tab').forEach((tab) => { tab.tabIndex = tab.dataset.wijk === activeWijk ? 0 : -1; });
+  if (!cloudConfigured) {
+    setSyncMessage('Nog niet gekoppeld aan gedeelde opslag. Wijzigingen blijven op dit apparaat.', 'error');
+  }
   render();
+  if (cloudConfigured) {
+    if (!cloud) setSyncMessage('De cloudbibliotheek is niet geladen. Controleer je internetverbinding.', 'error');
+    else {
+      cloud.auth.onAuthStateChange((_event, session) => {
+        isAdmin = Boolean(session?.user);
+        if (!isAdmin) editMode = false;
+        render();
+        loadSharedData();
+      });
+      cloud.auth.getSession().then(({ data, error }) => {
+        if (error) throw error;
+        isAdmin = Boolean(data.session?.user);
+        render();
+        return loadSharedData();
+      }).catch((error) => setSyncMessage(`Verbinding lukt niet: ${error.message}`, 'error'));
+      window.setInterval(() => {
+        if (document.visibilityState === 'visible' && !editMode && !addressDialog.open && !deleteDialog.open) loadSharedData({ quiet: true });
+      }, 10000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && !editMode) loadSharedData({ quiet: true });
+      });
+    }
+  }
 })();

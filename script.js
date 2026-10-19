@@ -57,7 +57,7 @@
     try {
       const rows = JSON.parse(value);
       if (Array.isArray(rows)) {
-        routes[wijk].data = rows
+        const savedRows = rows
           .filter((item) => item && typeof item === 'object')
           .map((item) => ({
             name: String(item.name || ''),
@@ -66,6 +66,9 @@
             delivered: item.delivered === true
           }))
           .filter((item) => item.name && item.address);
+        // An empty saved list can result from a previous failed load. Keep the
+        // bundled address list and repair storage instead of showing 0 / 0.
+        if (savedRows.length > 0) routes[wijk].data = savedRows;
         saveAddresses(wijk);
       }
     } catch { /* Gebruik de ingebouwde startlijst als lokale gegevens ongeldig zijn. */ }
